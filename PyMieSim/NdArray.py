@@ -5,11 +5,100 @@ import numpy as np
 import copy
 import matplotlib.pyplot as plt
 from itertools import product
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
-from PyMieSim.Config import MetricList
-from PyMieSim.utils  import FormatStr, FormatString
-from PyMieSim.Config import EFFTYPE
+from PyMieSim.Config      import *
+from PyMieSim.Directories import *
+from PyMieSim.ErrorMsg    import *
+from PyMieSim.utils       import FormatStr, FormatString, ToList, Table
+from PyMieSim.Plots       import ExperimentPlot
 
+
+
+class Table:
+    def __init__(self, lst0, lst1, config=None):
+        assert len(set(lst0)) == len(lst0), 'Invalid input'
+        assert len(set(lst1)) == len(lst1),  'Invalid input'
+        self.lst0 = lst0
+        self.lst1 = [element.lower() for element in lst1]
+        self.Full = self.lst0 + self.lst1
+
+        self.config = config
+
+
+    @FormatStr
+    def __getitem__(self, Val):
+        assert Val in self.Full,  'Invalid input'
+
+        if isinstance(Val, str):
+            idx = self.lst1.index(Val)
+            return self.lst0[idx]
+        else:
+            return self.lst1[Val]
+
+    @FormatStr
+    def label(self, Val):
+        assert Val in self.Full,  'Invalid input'
+
+        if isinstance(Val, str):
+            dic = Arg2Dict[Val]
+
+        else:
+            Val = self.lst1[Val]
+            dic = Arg2Dict[Val]
+
+        return dic['label']
+
+
+    @FormatStr
+    def dimension(self, Val):
+        assert Val in self.Full,  'Invalid input'
+
+        if isinstance(Val, str):
+            idx = self.lst1.index(Val)
+
+        else:
+            idx = Val
+
+        return self.config['X'][idx]['dimension']
+
+
+    @FormatStr
+    def size(self, Val):
+        assert Val in self.Full,  'Invalid input'
+
+        if isinstance(Val, str):
+            idx = self.lst1.index(Val)
+
+        else:
+            idx = Val
+
+        return self.config['X'][idx]['size']
+
+
+    @FormatStr
+    def format(self, Val):
+        assert Val in self.Full,  'Invalid input'
+
+        if isinstance(Val, str):
+            dic = Arg2Dict[Val]
+
+        else:
+            Val = self.lst1[Val]
+            dic = Arg2Dict[Val]
+
+        return dic['format']
+
+
+    def Iterate(self):
+        for order, key in self.config['X'].items():
+            name   = self[order]
+            label  = self.label(order)
+            format = self.format(order)
+            size   = self.size(order)
+            dim    = order
+            yield name, label, format, size, dim
 
 
 class PMSArray(object):
@@ -17,6 +106,14 @@ class PMSArray(object):
     def __init__(self, array, conf):
         self.data = array
         self.conf = conf
+
+        Torder = []
+        Korder = []
+        for order, key in self.conf['X'].items():
+            Torder.append(order)
+            Korder.append(key['name'])
+
+        self.Table = Table(Torder, Korder, conf)
 
 
     @FormatStr
@@ -73,11 +170,9 @@ class PMSArray(object):
             New PMSArray instance containing the monotonic metric value of axis.
 
         """
-        axis = axis.lower()
 
         arr  = np.gradient(self.data,
-                           axis = self.conf['order'][axis])\
-                           .std( axis = self.conf['order'][axis])
+                           axis = self.Table[axis]).std( axis = self.Table[axis])
 
         conf = self.UpdateConf(axis)
 
@@ -101,9 +196,8 @@ class PMSArray(object):
             New PMSArray instance containing the mean value of axis.
 
         """
-        axis = axis.lower()
 
-        arr  = np.mean(self.data, axis=self.conf['order'][axis] )
+        arr  = np.mean(self.data, axis=self.Table[axis] )
 
         conf = self.UpdateConf(axis)
 
@@ -127,9 +221,8 @@ class PMSArray(object):
             New PMSArray instance containing the std value of axis.
 
         """
-        axis = axis.lower()
 
-        arr  = np.std(self.data, axis=self.conf['order'][axis] )
+        arr  = np.std(self.data, axis=self.Table[axis] )
 
         conf = self.UpdateConf(axis)
 
@@ -154,10 +247,9 @@ class PMSArray(object):
             New PMSArray instance containing the rsd value of axis.
 
         """
-        axis = axis.lower()
 
-        arr  = np.std(self.data, axis=self.conf['order'][axis] ) \
-              /np.mean(self.data, axis=self.conf['order'][axis] )
+        arr  = np.std(self.data, axis=self.Table[axis] ) \
+              /np.mean(self.data, axis=self.Table[axis] )
 
         conf = self.UpdateConf(axis)
 
@@ -182,35 +274,22 @@ class PMSArray(object):
 
         """
 
-        newConf = self.conf.copy()#copy.copy(self.conf)  <----- I don't like it!
+        newConf = self.conf.copy()
 
-        dim = newConf['order'][axis]
+        n = 0
+        new = {}
+        for order, val in self.conf['X'].items():
+            if val['name'] == axis: continue
+            new[n] = val
+            n += 1
 
-        newConf['order'].pop(axis)
-
-        newConf['X'].pop(dim)
-
-        newConf['order'] = {key: n for n, key in enumerate( newConf['order'].keys() ) }
-
-        newConf['X'] = {n: dic for n, dic in enumerate( newConf['X'].values() ) }
+        newConf['X'] = new
 
         return newConf
 
 
-
-    def GetScale(self, Scale):
-        yLog = False; xLog = False
-
-        if Scale in ['lin', 'linear']        : yLog = False; xLog = False;
-        if Scale in ['log', 'logarithmic']   : yLog = True;  xLog = True;
-        if Scale in ['xlog', 'xlogarithmic'] : yLog = False; xLog = True;
-        if Scale in ['ylog', 'ylogarithmic'] : yLog = True;  xLog = False;
-
-        return xLog, yLog
-
-
-    @FormatStr
-    def Plot(self, x,  Scale = 'linear', Groupby='name', *args, **kwargs):
+    @ExperimentPlot
+    def _Plot(self, y, x, figure=None, ax=None, *args, **kwargs):
         """Method plot the multi-dimensional array with the x key as abscissa.
         args and kwargs can be passed as standard input to matplotlib.pyplot.
 
@@ -220,65 +299,56 @@ class PMSArray(object):
             Key of the self dict which represent the abscissa.
         Scale : str
             Options allow to switch between log and linear scale ['log', 'linear'].
-        Groupby : str
-            Key to regroupe plots in same figure, options are ['name', 'type', 'unit']
 
         """
 
-        xLog, yLog = self.GetScale(Scale)
+        assert set(y).issubset(set(self.conf['Got'])), ErrorExperimentPlot
 
         DimSlicer, xval = self.GetSlicer(x)
-
-        PlotDict = {}
-        for key, val in self.conf['Y'].items():
-            if not val[Groupby] in PlotDict:
-                PlotDict[val[Groupby]] = plt.subplots(figsize=(10,5))
 
         for iddx in DimSlicer:
             for key, val in self.conf['Y'].items():
 
                 idx = (*iddx, val['order'])
 
-                data = self.data[idx]
+                label, common  = self.GetLegend(x, idx, val)
 
-                label  = self.GetLegend(x, idx, val, Groupby)
+                ax.plot(xval, self.data[idx], label=label)
 
-                figure, ax = PlotDict[val[Groupby]]
+        plt.gcf().text(0.12, 0.95, common, fontsize = 8,
+                       bbox      = dict(facecolor='none',
+                       edgecolor = 'black',
+                       boxstyle  = 'round'))
 
-                ax.plot(xval, data, label=label, *args, **kwargs)
 
-                xIndex = self.conf['order'][x]
-
-                ax.set_xlabel(self.conf['X'][xIndex]['label'])
-
-                ax.set_ylabel(val['type'])
-
-        for key, (fig,ax) in PlotDict.items():
-            ax.grid()
-            lgd = ax.legend(fontsize=6, loc='upper left')
-            if yLog: ax.set_yscale('log')
-            if xLog: ax.set_xscale('log')
-
+    def Plot(self, *args, **kwargs):
+        self._Plot(*args, **kwargs)
         plt.show()
 
 
+    def SaveFig(self, Directory='newFig', dpi=200, *args, **kwargs):
+        dir = os.path.join(ZeroPath, Directory) + '.png'
+        self._Plot(*args, **kwargs)
+        print(f'Saving figure in {dir}...')
+        plt.savefig(dir, dpi=dpi)
+
+
     def GetSlicer(self, x):
+        shape       = list(self.data.shape)
 
-        shape = list(self.data.shape)
+        Xidx        = self.Table[x]
 
-        for order, dict in self.conf['X'].items():
-            key   = dict['name']
+        shape[Xidx] = None
 
-            if key.lower() == x.lower():
-                shape[order] = None
-                xval         = self.conf['X'][order]['dimension']
+        xval        = self.Table.dimension(x)
 
-        DimSlicer = [range(s) if s is not None else [slice(None)] for s in shape[:-1]]
+        DimSlicer   = [range(s) if s is not None else [slice(None)] for s in shape[:-1]]
 
         return product(*DimSlicer), xval
 
 
-    def GetLegend(self, axis, idx, ydict, Groupby):
+    @FormatStr
+    def GetLegend(self, axis, idx, ydict):
         """Method generate and return the legend text for the specific plot.
 
         Parameters
@@ -295,24 +365,29 @@ class PMSArray(object):
 
         """
 
-        if ydict['type'] == "coupling":
-            label = f"{str(ydict['name']): >7} | "
+        diff = f"{ydict['legend']:<9}| "
 
-        else:
-            label = f"{ydict['legend']: >7} | "
+        common = ''
 
-        for order, xdict in self.conf['X'].items():
+        for order, (name,
+                    label,
+                    format,
+                    size, dim) in enumerate( self.Table.Iterate() ):
 
-            if axis != xdict['name']:
+            if axis == name: continue
+            
+            val = self.Table.dimension(order)[idx[order]]
 
-                val = xdict['dimension'][idx[order]]
+            if name == 'material' : val = val.__str__()
 
-                if xdict['name'] == 'material' :
-                    val = val.__str__()
+            string = f"{name}: {val:{format}} | "
 
-                label += f"{xdict['name']}: {val:{xdict['format']}} | "
+            if size != 1:
+                diff += string
+            else:
+                common += string
 
-        return label
+        return diff, common
 
 
     def __getitem__(self, key):
@@ -324,17 +399,20 @@ class PMSArray(object):
 
         name = [str(val['name']) for val in self.conf['Y'].values()]
 
-        text =  f'PyMieArray \nVariable: {name.__str__()}\n' + '='*120 + '\n'
+        newLine = '\n' + '=' * 120 + '\n'
 
-        text += f"{'Parameter':13s}\n" + '-'*120 + '\n'
+        text =  f'PyMieArray \nVariable: {name.__str__()}' + newLine
 
-        for order, key in self.conf['X'].items():
-            text += f"""{key['label']:30s}\
-                        | dimension = {order}\
-                        | size      = {key['size']}\
-                        \n"""
+        text += "Parameter" + newLine
 
-        text += '='*120 + '\n'
+        for _, label, format, size, dim in self.Table.Iterate():
+            text += f"""{label:30s}\
+            | dimension = {name}\
+            | size      = {size}\
+            \n"""
+
+        text += newLine
+
         return text
 
 
@@ -391,9 +469,6 @@ class Opt5DArray(np.ndarray):
     def Cost(self):
 
         return self.CostFunc(self)
-
-
-
 
     def Monotonic(self, axis):
 

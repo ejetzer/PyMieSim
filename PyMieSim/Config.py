@@ -79,7 +79,7 @@ ShellWidthDict = { 'name'           : 'shellwidth',
 
 MaterialDict = { 'name'             : 'material',
                  'label'            : 'Material refractive index [1]',
-                 'format'           : '10s',
+                 'format'           : '',
                  'unit'             : '',
                  'order'            : None,
                  'dimension'        : None }
@@ -92,13 +92,13 @@ PolarizationDict = { 'name'         : 'polarization',
                      'order'        : None }
 
 WavelengthDict = { 'name'           : 'wavelength',
-                   'label'          : r'Wavelength $\lambda$ [m]',
+                   'label'          : r'Wavelength [m]',
                    'format'         : '.1e',
                    'unit'           : 'm',
                    'order'          : None,
                    'dimension'      : None }
 
-NADict =   { 'name'                 : 'na',
+NADict =   { 'name'                 : 'NA',
              'label'                : 'Numerical aperture (NA) [1]',
              'format'               : '.3f',
              'unit'                 : '[1]',
@@ -114,7 +114,7 @@ SamplingDict =   { 'name'           : 'sampling',
 
 GammaOffDict =   { 'name'           : 'gammaoffset',
                    'label'          : 'Gamma offset [degree]',
-                   'format'         : '.3f',
+                   'format'         : '04.1f',
                    'unit'           : '[degree]',
                    'order'          : None,
                    'dimension'      : None }
@@ -259,34 +259,33 @@ CouplingDict = { 'name'             : 'coupling',
                  'unit'             :  '[Watt]',
                  'type'             : 'Coupling [watt]' }
 
-
+modeDict = { 'name'             : 'mode',
+             'label'            : 'Mode',
+             'legend'           : 'mode',
+             'format'           : '',
+             'unit'             : ' ',
+             'type'             : ' ' }
 #-------------------------------------------------------------------------------
-BaseConfig = { 'name'               : None,
-               'unit'               : {},
-               'material'           : None,
-               'order'              : {},
-               'label'              : {},
-               'format'             : {},
-               'dimension'          : {},
-               'MaxOrder'           : 0,
+BaseConfig = { 'MaxOrder'           : 0,
                'X'                  : {},
                'Y'                  : {}}
 
-Arg2Dict = { 'Diameter'             : DiameterDict,
-             'Index'                : IndexDict,
-             'Material'             : MaterialDict,
-             'nMedium'              : nMediumDict,
-             'Polarization'         : PolarizationDict,
-             'Wavelength'           : WavelengthDict,
-             'CoreDiameter'         : CoreDiameterDict,
-             'ShellWidth'           : ShellWidthDict,
-             'CoreIndex'            : CoreIndexDict,
-             'ShellIndex'           : ShellIndexDict,
-             'NA'                   : NADict,
-             'PhiOffset'            : PhiOffDict,
-             'GammaOffset'          : GammaOffDict,
-             'Sampling'             : SamplingDict,
-             'CouplingMode'         : CouplingModeDict}
+Arg2Dict = { 'diameter'             : DiameterDict,
+             'index'                : IndexDict,
+             'material'             : MaterialDict,
+             'nmedium'              : nMediumDict,
+             'polarization'         : PolarizationDict,
+             'wavelength'           : WavelengthDict,
+             'corediameter'         : CoreDiameterDict,
+             'shellwidth'           : ShellWidthDict,
+             'coreindex'            : CoreIndexDict,
+             'shellindex'           : ShellIndexDict,
+             'na'                   : NADict,
+             'mode'                 : modeDict,
+             'phioffset'            : PhiOffDict,
+             'gammaoffset'          : GammaOffDict,
+             'sampling'             : SamplingDict,
+             'couplingmode'         : CouplingModeDict}
 
 Prop2Dict = { 'musca'               : MuScaDict,
               'muext'               : MuExtDict,
