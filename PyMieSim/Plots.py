@@ -1,44 +1,41 @@
-import numpy as np
-from numpy import pi, cos, sin, abs
-from mayavi import mlab
+import matplotlib.pyplot as plt
+import numpy    as np
+from numpy      import pi, cos, sin, abs
+from mayavi     import mlab
 from tvtk.tools import visual
-from tvtk.api import tvtk
-
-from PyMieSim.utils import Sp2Cart
-from PyMieSim.PlotsUtils import *
+from tvtk.api   import tvtk
 from pyface.api import GUI
 
-def Unstructured(**kwargs):
-    fig = mlab.figure(figure=kwargs['Name'],size=(600,300))
-    visual.set_viewer(fig)
+from PyMieSim.utils import Sp2Cart, ToList, FormatStr, FormatString
+from PyMieSim.Config import *
+from PyMieSim.PlotsUtils import *
 
+
+def Unstructured(**kwargs):
     if kwargs['Mode'] == 'Absolute':
         kwargs.pop('Mode')
-        return UnstructuredAbs(**kwargs, Figure=fig)
+        return UnstructuredAbs(**kwargs)
 
     if kwargs['Mode'] == 'Amplitude':
         kwargs.pop('Mode')
-        return UnstructuredAmplitude(**kwargs, Figure=fig)
+        return UnstructuredAmplitude(**kwargs)
+
 
 
 def Structured(**kwargs):
-
     if kwargs['Mode'] == 'Absolute':
         kwargs.pop('Mode')
-        return StructuredAbs(**kwargs, Figure=fig)
+        return StructuredAbs(**kwargs)
 
     if kwargs['Mode'] == 'Amplitude':
         kwargs.pop('Mode')
-        return StructuredAmplitude(**kwargs, Figure=fig)
+        return StructuredAmplitude(**kwargs)
 
 
-@mlab.show
-def UnstructuredAbs(Mesh,
-                    Scalar  = None,
-                    Name    = '',
-                    Figure  = None):
 
-    Figure = mlab.figure(figure=Name, size=(600,300))
+def UnstructuredAbs(Mesh, Scalar = None, Name = '', Figure  = None):
+
+    Figure = mlab.figure(figure=None, size=(600,300))
     visual.set_viewer(Figure)
 
     if Scalar is None: Scalar = Mesh.Phi.Radian*0+1
@@ -66,13 +63,11 @@ def UnstructuredAbs(Mesh,
                   orientation      = 'horizontal' )
 
 
-@mlab.show
-def UnstructuredAmplitude(Mesh,
-                          Scalar  = None,
-                          Name    = '',
-                          Figure  = None):
 
-    Figure = mlab.figure(figure=Name, size=(600,300))
+
+def UnstructuredAmplitude(Mesh, Scalar = None, Name = ''):
+    Figure = mlab.figure(figure=None, size=(600,300))
+
     visual.set_viewer(Figure)
 
     if Scalar is None: Scalar = Mesh.Phi.Radian.flatten()*0+1
@@ -117,16 +112,18 @@ def UnstructuredAmplitude(Mesh,
 
         WavenumberArrow(Figure, Origin=(val,0,-3), Scale=1)
 
+    return Figure
 
-@mlab.show
+
+
+
 def StructuredAbs(Scalar,
                   Phi,
                   Theta,
                   Name         = '',
-                  Polarization = None,
-                  Figure       = None):
+                  Polarization = None):
 
-    Figure = mlab.figure(figure=Name, size=(600,300))
+    Figure = mlab.figure(figure=None, size=(600,300))
     visual.set_viewer(Figure)
 
     O = (0,0,0)
@@ -147,18 +144,17 @@ def StructuredAbs(Scalar,
     if Polarization is not None:
         AddSource(Figure, O1, Polarization, Scale=1)
 
+    return Figure
 
 
-@mlab.show
 def StructuredAmplitude(Scalar,
                         Phi,
                         Theta,
                         Name         = '',
                         Polarization = None,
-                        Figure       = None,
                         Source       = None):
 
-    Figure = mlab.figure(figure=Name, size=(600,300))
+    Figure = mlab.figure(figure=None, size=(600,300))
     visual.set_viewer(Figure)
 
     x, y, z = Sp2Cart(Phi*0+1, Phi, Theta)
@@ -190,9 +186,9 @@ def StructuredAmplitude(Scalar,
                       title            = f'{keys} part',
                       orientation      = ax )
 
+    return Figure
 
 
-@mlab.show
 def PlotConfiguration(Detector, Scatterer):
     """Still experimental"""
     from tvtk.tools import visual
@@ -242,8 +238,6 @@ def PlotConfiguration(Detector, Scatterer):
 
 
 
-
-@mlab.show
 def StokesPlot(I,
                Q,
                U,
@@ -293,7 +287,46 @@ def StokesPlot(I,
 
 
 
+def ExperimentPlot(func):
+    figure = plt.figure(figsize=(10,5))
+    ax = figure.add_subplot(111)
+    ax.grid()
 
+
+    def wrapper(*args, **kwargs):
+
+        kwargs['y'] = ToList(kwargs['y'])
+        kwargs['y'] = [FormatString(element) for element in kwargs['y']]
+
+        if 'Scale' not in kwargs.keys():
+            Scale = 'linear'
+        else:
+            Scale = kwargs['Scale']
+
+        yLog  = False; xLog = False
+
+        func(*args, **kwargs,  figure=figure, ax=ax)
+
+        ax.set_ylabel('/'.join(kwargs['y']))
+
+        ax.set_xlabel( Arg2Dict[kwargs['x'].lower()]['label'] )
+
+        if Scale in ['lin', 'linear']:
+            pass
+
+        elif Scale in ['log', 'logarithmic']:
+            ax.set_yscale('log')
+            ax.set_xscale('log')
+
+        elif Scale in ['xlog', 'xlogarithmic']:
+            ax.set_xscale('log')
+
+        if Scale in ['ylog', 'ylogarithmic']:
+            ax.set_yscale('log')
+
+        ax.legend(loc='upper left', prop={'family': 'monospace', 'size':7})
+
+    return wrapper
 
 
 

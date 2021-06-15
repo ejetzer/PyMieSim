@@ -289,6 +289,19 @@ def ToList(*args):
 
 def GeneratorFromDict(dictionnary):
     order = {a: n for n, a in enumerate(dictionnary.keys())}
+
+    Generator = itertools.product( *( a for a in dictionnary.values() ) )
+
+
+    for arguments in Generator:
+        for n, key in enumerate( dictionnary.keys() ):
+            order[key] = arguments[n]
+
+        yield order
+
+
+def _GeneratorFromDict(dictionnary):
+    order = {a: n for n, a in enumerate(dictionnary.keys())}
     return itertools.product( *( a for a in dictionnary.values() ) ), order
 
 
@@ -310,4 +323,23 @@ def FormatStr(function):
 
 def FormatString(string):
     return re.sub(r"\s+", "", string.lower() )
+
+
+
+class Table:
+    def __init__(self, lst0, lst1):
+        assert len(set(lst0)) == len(lst0), 'Invalid input'
+        assert len(set(lst1)) == len(lst1),  'Invalid input'
+        self.lst0 = lst0
+        self.lst1 = [element.lower() for element in lst1]
+
+
+    @FormatStr
+    def __getitem__(self, Val):
+        assert Val in self.lst0 + self.lst1,  'Invalid input'
+        if isinstance(Val, str):
+            idx = self.lst1.index(Val)
+            return self.lst0[idx]
+        else:
+            return self.lst1[Val]
 # -

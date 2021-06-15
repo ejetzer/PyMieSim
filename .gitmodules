@@ -1,0 +1,18 @@
+[submodule "fibermodes"]
+	path = fibermodes
+	url = https://github.com/cbrunet/fibermodes
+[submodule "extern/--force"]
+	path = extern/--force
+	url = https://github.com/cbrunet/fibermodes
+[submodule "extern/pybind11"]
+	path = extern/pybind11
+	url = https://github.com/pybind/pybind11.git
+[submodule "extern/fibermodes"]
+	path = extern/fibermodes
+	url = https://github.com/cbrunet/fibermodes.git
+[submodule "extern/math"]
+	path = extern/math
+	url = https://github.com/boostorg/math.git
+[submodule "extern/complex_bessel"]
+	path = extern/complex_bessel
+	url = https://github.com/joeydumont/complex_bessel.git

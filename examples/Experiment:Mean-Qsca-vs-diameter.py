@@ -1,4 +1,4 @@
-def run():
+def run(Plot, Save):
     import numpy as np
     from PyMieSim            import Material
     from PyMieSim.Scatterer  import Sphere
@@ -10,7 +10,7 @@ def run():
                      'Material' : [Material('Silver')],
                      'nMedium'  : [1] }
 
-    sourceKwargs = { 'Wavelength'   : [400e-9, 900e-9, 1200e-9],
+    sourceKwargs = { 'Wavelength'   : [400e-9, 900e-9, 1200e-9, 1600e-9],
                      'Polarization' : [0]}
 
     scatSet   = ScatSet(Scatterer = Sphere,  kwargs = scatKwargs )
@@ -26,13 +26,16 @@ def run():
 
     print(MeanData)
 
-    MeanData.Plot(x='diameter', Scale='log', Groupby='type')
+    if Plot:
+        Data.Plot(y='Qabs', x='diameter', Scale='log')
 
-
+    if Save:
+        from pathlib import Path
+        dir = f'docs/images/{Path(__file__).stem}'
+        Data.SaveFig(Directory=dir, y='Qabs', x='diameter', Scale='log')
 
 if __name__ == '__main__':
-    run()
-
+    run(Plot=True, Save=False)
 
 
 #___________________________OUTPUT___________________________________
