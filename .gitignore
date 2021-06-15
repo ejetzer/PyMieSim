@@ -2,6 +2,7 @@
 
 
 /build
+__pycache__
 temp.py
 *Untitled*
 *Perso*
