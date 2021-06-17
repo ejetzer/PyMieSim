@@ -10,8 +10,9 @@ find_package(Python COMPONENTS Interpreter Development REQUIRED)
 
 add_subdirectory(extern/pybind11)
 
-FIND_PACKAGE(PythonInterp 3.8 REQUIRED)
+FIND_PACKAGE(PythonInterp 3.9 REQUIRED)
 
+set(complex_bessel_DIR extern/complex_bessel)
 find_package(complex_bessel)
 
 INCLUDE_DIRECTORIES( ${PYTHON_INCLUDE_DIRS} ${PYBIND11_INCLUDE_DIRS} )

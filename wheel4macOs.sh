@@ -1,28 +1,33 @@
 
-python3 -m pip install numpy scipy matplotlib cython pandas pyqt5 wheel vtk twine setuptools_rust cryptography==3.3.2 auditwheel
+python3 -m pip install numpy scipy matplotlib cython pandas pyqt5 wheel vtk twine setuptools_rust cryptography==3.3.2 auditwheel delocate
 
-COPY . ./temporary/PyMieSim/
+export TMP=~/temporary/PyMieSim
 
-rm -rf /temporary/PyMieSim/CMakeFiles /GitProject/PyMieSim/CMakeCache.txt
+sudo cp -r . $TMP
 
-mkdir /temporary/PyMieSim/output /temporary/PyMieSim/dist/* /temporary/PyMieSim/build/* /temporary/PyMieSim/output/*
+sudo rm -rf $TMP/CMakeFiles ~/GitProject/PyMieSim/CMakeCache.txt
 
-rm /temporary/PyMieSim/**/*.so /temporary/PyMieSim/**/**/*.so -f
+sudo mkdir $TMP/output $TMP/dist/* $TMP/build/* $TMP/output/*
 
-cp -r /temporary/PyMieSim/extern/math/include/boost /usr/include
+sudo rm $TMP/**/*.so $TMP/**/**/*.so -f
 
-mkdir /temporary/PyMieSim/extern/complex_bessel/build
+sudo cp -r $TMP/extern/math/include/boost /usr/include
 
-cd /temporary/PyMieSim/extern/complex_bessel/build && cmake -DBUILD_TESTING=OFF .. && make install
+sudo mkdir $TMP/extern/complex_bessel/build
+
+cd $TMP/extern/complex_bessel/build && cmake -DBUILD_TESTING=OFF .. && make install
 
 cd ../../../..
 
-cd /temporary//PyMieSim && cmake . && make clean && make all
+export CMAKE_C_COMPILER=gcc-11
+export CMAKE_CXX_COMPILER=g++-11
 
-cd /temporary/PyMieSim && python3 -m pip install -r requirements.txt
+cd $TMP && cmake . && make clean && make all
 
-cd /temporary/PyMieSim/ && python3 setup.py install
+cd $TMP && python3 -m pip install -r requirements.txt
 
-cd /temporary/PyMieSim/ && python3 setup.py bdist_wheel
+cd $TMP && python3 setup.py install
 
-auditwheel repair /temporary/PyMieSim/dist/*.whl -w /temporary/PyMieSim/output
+cd $TMP && python3 setup.py bdist_wheel
+
+sudo delocate-wheel $TMP/dist/*.whl -w $TMP/output

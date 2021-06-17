@@ -12,3 +12,4 @@ pybind11
 numpydoc
 beartype
 vtk
+pybind11
