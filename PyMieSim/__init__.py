@@ -7,7 +7,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-
 PATH = os.path.join( Path(__file__).parent, 'Data/_Material' )
 
 from PyMieSim.Tools.utils       import IO
@@ -17,7 +16,7 @@ from PyMieSim.Tools.BaseClasses import BaseMaterial
 
 class Material(BaseMaterial):
     def __init__(self, name):
-        self._Data = None
+        self._Data    = None
         self.__name__ = name
 
         with open(os.path.join(PATH, 'Meta.json'), 'r+' ) as f:
